@@ -8,7 +8,7 @@ interface BottomSheetProps {
   selectedPoint: Point | null;
 }
 
-type SheetState = 'min' | 'mid' | 'max';
+type SheetState = 'min' | 'max';
 
 const BottomSheet: React.FC<BottomSheetProps> = ({
   points,
@@ -21,7 +21,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const initialHeight = useRef<number>(0);
-  const isProgrammaticChange = useRef<boolean>(false);
 
   // Функция для определения высоты в зависимости от состояния
   const getSheetHeight = (state: SheetState): number => {
@@ -29,8 +28,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     switch(state) {
       case 'min':
         return windowHeight * 0.33; // 1/3 экрана
-      case 'mid':
-        return windowHeight * 0.66; // 2/3 экрана
       case 'max':
         return windowHeight * 0.9; // почти полный экран
       default:
@@ -49,17 +46,16 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
   // Обновляем высоту при изменении состояния
   useEffect(() => {
-    if (sheetRef.current && !isProgrammaticChange.current) {
+    if (sheetRef.current) {
       sheetRef.current.style.height = `${getSheetHeight(sheetState)}px`;
     }
-    isProgrammaticChange.current = false;
   }, [sheetState]);
 
   // Эффект для сворачивания панели при выборе точки
   useEffect(() => {
+    console.log('selectedPoint изменился:', selectedPoint);
     if (selectedPoint) {
-      // При выборе точки возвращаемся к минимальной высоте
-      isProgrammaticChange.current = true;
+      console.log('Сворачиваем панель до min');
       setSheetState('min');
     }
   }, [selectedPoint]);
@@ -83,7 +79,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     const deltaY = currentY - startY.current;
     const windowHeight = window.innerHeight;
     
-    // Рассчитываем новую высоту (инвертируем, потому что тянем вверх для увеличения)
+    // Рассчитываем новую высоту
     const newHeight = Math.max(
       windowHeight * 0.33,
       Math.min(windowHeight * 0.9, initialHeight.current - deltaY)
@@ -101,33 +97,27 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     const currentHeight = parseFloat(sheetRef.current.style.height);
     const windowHeight = window.innerHeight;
     const minHeight = windowHeight * 0.33;
-    const midHeight = windowHeight * 0.66;
     const maxHeight = windowHeight * 0.9;
     
     // Определяем, к какому состоянию нужно перейти
-    const midThreshold = (minHeight + midHeight) / 2;
-    const maxThreshold = (midHeight + maxHeight) / 2;
+    const threshold = (minHeight + maxHeight) / 2;
     
-    let newState: SheetState = 'min';
-    if (currentHeight >= maxThreshold) {
-      newState = 'max';
-    } else if (currentHeight >= midThreshold) {
-      newState = 'mid';
+    if (currentHeight < threshold) {
+      setSheetState('min');
+    } else {
+      setSheetState('max');
     }
-    
-    setSheetState(newState);
   };
 
   const handlePointClick = (point: Point) => {
+    console.log('Клик по точке:', point.name);
     onPointSelect(point);
-    // Панель свернется автоматически через useEffect
+    // Панель свернется через useEffect
   };
 
   const handleBackToList = () => {
-    onPointSelect(null); // Сбрасываем выбранную точку
-    // Панель останется в текущем состоянии или можно также свернуть
-    // isProgrammaticChange.current = true;
-    // setSheetState('min');
+    console.log('Возврат к списку');
+    onPointSelect(null);
   };
 
   return (
@@ -143,7 +133,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         <div className="bottom-sheet__drag-handle" />
         <div className="bottom-sheet__indicator">
           <span className={`bottom-sheet__dot ${sheetState === 'min' ? 'bottom-sheet__dot--active' : ''}`} />
-          <span className={`bottom-sheet__dot ${sheetState === 'mid' ? 'bottom-sheet__dot--active' : ''}`} />
           <span className={`bottom-sheet__dot ${sheetState === 'max' ? 'bottom-sheet__dot--active' : ''}`} />
         </div>
       </div>

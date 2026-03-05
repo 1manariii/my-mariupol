@@ -9,9 +9,11 @@ const App: React.FC = () => {
   const mapRef = useRef<any>(null);
 
   const handlePointSelect = (point: Point | null) => {
+    console.log('handlePointSelect вызван с:', point);
     setSelectedPoint(point);
     
-    if (point && mapRef.current) { // Добавил проверку на point
+    if (point && mapRef.current) {
+      console.log('Перемещаем карту к точке:', point.name);
       mapRef.current.panTo([point.coordinates.lat, point.coordinates.lng], {
         flying: true,
         duration: 300
