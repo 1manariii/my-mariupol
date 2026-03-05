@@ -21,6 +21,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const initialHeight = useRef<number>(0);
+  const isProgrammaticChange = useRef<boolean>(false);
 
   // Функция для определения высоты в зависимости от состояния
   const getSheetHeight = (state: SheetState): number => {
@@ -48,10 +49,20 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
   // Обновляем высоту при изменении состояния
   useEffect(() => {
-    if (sheetRef.current) {
+    if (sheetRef.current && !isProgrammaticChange.current) {
       sheetRef.current.style.height = `${getSheetHeight(sheetState)}px`;
     }
+    isProgrammaticChange.current = false;
   }, [sheetState]);
+
+  // Эффект для сворачивания панели при выборе точки
+  useEffect(() => {
+    if (selectedPoint) {
+      // При выборе точки возвращаемся к минимальной высоте
+      isProgrammaticChange.current = true;
+      setSheetState('min');
+    }
+  }, [selectedPoint]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
@@ -97,17 +108,26 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     const midThreshold = (minHeight + midHeight) / 2;
     const maxThreshold = (midHeight + maxHeight) / 2;
     
-    if (currentHeight < midThreshold) {
-      setSheetState('min');
-    } else if (currentHeight < maxThreshold) {
-      setSheetState('mid');
-    } else {
-      setSheetState('max');
+    let newState: SheetState = 'min';
+    if (currentHeight >= maxThreshold) {
+      newState = 'max';
+    } else if (currentHeight >= midThreshold) {
+      newState = 'mid';
     }
+    
+    setSheetState(newState);
+  };
+
+  const handlePointClick = (point: Point) => {
+    onPointSelect(point);
+    // Панель свернется автоматически через useEffect
   };
 
   const handleBackToList = () => {
     onPointSelect(null); // Сбрасываем выбранную точку
+    // Панель останется в текущем состоянии или можно также свернуть
+    // isProgrammaticChange.current = true;
+    // setSheetState('min');
   };
 
   return (
@@ -169,7 +189,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                 <div
                   key={point.id}
                   className="bottom-sheet__point-item"
-                  onClick={() => onPointSelect(point)}
+                  onClick={() => handlePointClick(point)}
                 >
                   <div className="bottom-sheet__point-info">
                     <h4>{point.name}</h4>
