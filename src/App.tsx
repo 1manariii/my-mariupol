@@ -12,6 +12,7 @@ const App: React.FC = () => {
     console.log('handlePointSelect вызван с:', point);
     setSelectedPoint(point);
     
+    // Важно! Проверяем, что point не null перед вызовом panTo
     if (point && mapRef.current) {
       console.log('Перемещаем карту к точке:', point.name);
       mapRef.current.panTo([point.coordinates.lat, point.coordinates.lng], {
