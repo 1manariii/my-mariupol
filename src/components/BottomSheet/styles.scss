@@ -1,0 +1,270 @@
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: height 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  
+  // Начальная высота будет установлена через inline style
+  
+  &__header {
+    position: relative;
+    padding: 12px 16px;
+    cursor: grab;
+    user-select: none;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    
+    &:active {
+      cursor: grabbing;
+    }
+  }
+  
+  &__drag-handle {
+    width: 40px;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    margin: 0 auto 8px;
+  }
+  
+  &__indicator {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    transition: all 0.3s ease;
+    
+    &--active {
+      background: #4a90e2;
+      transform: scale(1.2);
+    }
+  }
+  
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  &__title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+  }
+  
+  &__subtitle {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 20px;
+  }
+  
+  // Секция с выбранной точкой
+  &__selected-section {
+    animation: fadeIn 0.3s ease;
+  }
+  
+  &__selected-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  &__back-button {
+    background: none;
+    border: none;
+    color: #4a90e2;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 20px;
+    transition: background 0.2s;
+    
+    &:hover {
+      background: #f0f7ff;
+    }
+  }
+  
+  &__selected-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+  }
+  
+  &__description {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 12px;
+  }
+  
+  &__address {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eaeaea;
+  }
+  
+  &__coordinates {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: #999;
+  }
+  
+  &__action-button {
+    width: 100%;
+    padding: 16px;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    
+    &:hover {
+      background: #357abd;
+    }
+    
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+  
+  // Список точек
+  &__points-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  &__point-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #eaeaea;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+  
+  &__point-info {
+    flex: 1;
+    
+    h4 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    
+    p {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+  }
+  
+  &__point-address {
+    font-size: 12px;
+    color: #999;
+  }
+  
+  &__point-arrow {
+    font-size: 20px;
+    color: #ccc;
+    margin-left: 16px;
+    transition: transform 0.2s;
+  }
+  
+  &__point-item:hover &__point-arrow {
+    transform: translateX(4px);
+    color: #4a90e2;
+  }
+}
+
+// Состояния панели
+.bottom-sheet--min {
+  .bottom-sheet__content {
+    // Можно добавить затемнение или другие эффекты
+  }
+}
+
+.bottom-sheet--mid {
+  .bottom-sheet__content {
+    // Стили для среднего состояния
+  }
+}
+
+.bottom-sheet--max {
+  .bottom-sheet__content {
+    // Стили для максимального состояния
+  }
+}
+
+// Анимации
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Медиа-запросы для десктопа
+@media (min-width: 768px) {
+  .bottom-sheet {
+    max-width: 400px;
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+    border-radius: 20px;
+    
+    &--min {
+      height: 300px !important;
+    }
+    
+    &--mid {
+      height: 500px !important;
+    }
+    
+    &--max {
+      height: 700px !important;
+    }
+  }
+}
