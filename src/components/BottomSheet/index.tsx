@@ -4,7 +4,7 @@ import type { Point } from '../../types';
 
 interface BottomSheetProps {
   points: Point[];
-  onPointSelect: (point: Point) => void;
+  onPointSelect: (point: Point | null) => void; // Изменен тип
   selectedPoint: Point | null;
 }
 
@@ -15,63 +15,72 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   onPointSelect,
   selectedPoint
 }) => {
-  const [sheetState, setSheetState] = useState<SheetState>('min'); // min = 1/3, mid = 2/3, max = полный экран (опционально)
+  const [sheetState, setSheetState] = useState<SheetState>('min');
   const [isDragging, setIsDragging] = useState(false);
-  const startY = useRef<number>(0);
-  const currentY = useRef<number>(0);
+  const [startY, setStartY] = useState(0);
+  const [currentY, setCurrentY] = useState(0);
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const initialHeight = useRef<number>(0);
 
   // Функция для определения высоты в зависимости от состояния
-  const getSheetHeight = (state: SheetState): string => {
+  const getSheetHeight = (state: SheetState): number => {
+    const windowHeight = window.innerHeight;
     switch(state) {
       case 'min':
-        return '33vh'; // 1/3 экрана
+        return windowHeight * 0.33; // 1/3 экрана
       case 'mid':
-        return '66vh'; // 2/3 экрана
+        return windowHeight * 0.66; // 2/3 экрана
       case 'max':
-        return '90vh'; // почти полный экран
+        return windowHeight * 0.9; // почти полный экран
       default:
-        return '33vh';
+        return windowHeight * 0.33;
     }
   };
+
+  // Устанавливаем начальную высоту
+  useEffect(() => {
+    if (sheetRef.current) {
+      const height = getSheetHeight(sheetState);
+      sheetRef.current.style.height = `${height}px`;
+      initialHeight.current = height;
+    }
+  }, []);
 
   // Обновляем высоту при изменении состояния
   useEffect(() => {
     if (sheetRef.current) {
-      sheetRef.current.style.height = getSheetHeight(sheetState);
+      sheetRef.current.style.height = `${getSheetHeight(sheetState)}px`;
     }
   }, [sheetState]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
-    startY.current = e.touches[0].clientY;
-    currentY.current = e.touches[0].clientY;
+    setStartY(e.touches[0].clientY);
+    setCurrentY(e.touches[0].clientY);
     
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'none';
+      initialHeight.current = parseFloat(sheetRef.current.style.height);
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging || !sheetRef.current) return;
     
-    currentY.current = e.touches[0].clientY;
-    const deltaY = currentY.current - startY.current;
+    e.preventDefault(); // Важно!
     
-    // Предотвращаем скролл контента при драге за хедер
-    if (contentRef.current && deltaY < 0 && sheetState === 'max') {
-      // Если тянем вверх и уже максимальная высота, разрешаем скролл контента
-      return;
-    }
+    const newCurrentY = e.touches[0].clientY;
+    setCurrentY(newCurrentY);
     
-    e.preventDefault();
-    
-    // Рассчитываем новую высоту
-    const currentHeight = parseFloat(getSheetHeight(sheetState));
+    const deltaY = newCurrentY - startY;
     const windowHeight = window.innerHeight;
-    const deltaHeight = -deltaY; // Инвертируем, потому что тянем вверх для увеличения
-    const newHeight = Math.min(windowHeight * 0.9, Math.max(windowHeight * 0.33, currentHeight + deltaHeight));
+    
+    // Рассчитываем новую высоту (инвертируем, потому что тянем вверх для увеличения)
+    const newHeight = Math.max(
+      windowHeight * 0.33,
+      Math.min(windowHeight * 0.9, initialHeight.current - deltaY)
+    );
     
     sheetRef.current.style.height = `${newHeight}px`;
   };
@@ -80,30 +89,30 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     if (!isDragging || !sheetRef.current) return;
     
     setIsDragging(false);
-    sheetRef.current.style.transition = 'height 0.3s ease-out';
+    sheetRef.current.style.transition = 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     
     const currentHeight = parseFloat(sheetRef.current.style.height);
     const windowHeight = window.innerHeight;
     const minHeight = windowHeight * 0.33;
     const midHeight = windowHeight * 0.66;
+    const maxHeight = windowHeight * 0.9;
     
     // Определяем, к какому состоянию нужно перейти
-    if (currentHeight < minHeight + (midHeight - minHeight) / 2) {
+    const midThreshold = (minHeight + midHeight) / 2;
+    const maxThreshold = (midHeight + maxHeight) / 2;
+    
+    if (currentHeight < midThreshold) {
       setSheetState('min');
-    } else if (currentHeight < midHeight + (windowHeight * 0.9 - midHeight) / 2) {
+    } else if (currentHeight < maxThreshold) {
       setSheetState('mid');
     } else {
       setSheetState('max');
     }
   };
 
-  // Сброс состояния при выборе новой точки
-  useEffect(() => {
-    if (selectedPoint) {
-      // Можно автоматически раскрывать панель при выборе точки
-      // setSheetState('mid');
-    }
-  }, [selectedPoint]);
+  const handleBackToList = () => {
+    onPointSelect(null); // Сбрасываем выбранную точку
+  };
 
   return (
     <div 
@@ -131,7 +140,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
               <h2 className="bottom-sheet__title">{selectedPoint.name}</h2>
               <button 
                 className="bottom-sheet__back-button"
-                onClick={() => onPointSelect(points[0])} // Возврат к списку
+                onClick={handleBackToList}
               >
                 ← К списку
               </button>
@@ -157,7 +166,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
           // Список точек
           <>
             <h2 className="bottom-sheet__title">Интересные места</h2>
-            <p className="bottom-sheet__subtitle">Выберите точку на карте</p>
+            <p className="bottom-sheet__subtitle">Нажмите на точку, чтобы увидеть детали</p>
             
             <div className="bottom-sheet__points-list">
               {points.map(point => (
