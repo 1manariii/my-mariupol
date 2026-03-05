@@ -4,7 +4,7 @@ import type { Point } from '../../types';
 
 interface BottomSheetProps {
   points: Point[];
-  onPointSelect: (point: Point | null) => void; // Изменен тип
+  onPointSelect: (point: Point | null) => void;
   selectedPoint: Point | null;
 }
 
@@ -17,8 +17,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 }) => {
   const [sheetState, setSheetState] = useState<SheetState>('min');
   const [isDragging, setIsDragging] = useState(false);
-  const [startY, setStartY] = useState(0);
-  const [currentY, setCurrentY] = useState(0);
+  const startY = useRef<number>(0);
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const initialHeight = useRef<number>(0);
@@ -56,8 +55,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
-    setStartY(e.touches[0].clientY);
-    setCurrentY(e.touches[0].clientY);
+    startY.current = e.touches[0].clientY;
     
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'none';
@@ -68,12 +66,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging || !sheetRef.current) return;
     
-    e.preventDefault(); // Важно!
+    e.preventDefault();
     
-    const newCurrentY = e.touches[0].clientY;
-    setCurrentY(newCurrentY);
-    
-    const deltaY = newCurrentY - startY;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - startY.current;
     const windowHeight = window.innerHeight;
     
     // Рассчитываем новую высоту (инвертируем, потому что тянем вверх для увеличения)
